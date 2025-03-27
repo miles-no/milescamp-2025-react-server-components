@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { clearCart } from '@/app/slowDb/cartDb';
+import { clearCart } from '@/app/lib/db/cartDb';
 
 export async function POST() {
   try {

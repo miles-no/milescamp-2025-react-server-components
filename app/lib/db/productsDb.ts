@@ -1,4 +1,4 @@
-import { Product, mockProducts } from '../mocks/products';
+import { Product, mockProducts } from '@/app/mocks/products';
 
 const productsPerPage = 3;
 

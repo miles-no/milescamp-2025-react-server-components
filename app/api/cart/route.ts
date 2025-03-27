@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCartItems, addToCart } from '@/app/slowDb/cartDb';
+import { getCartItems, addToCart } from '@/app/lib/db/cartDb';
 import { Product } from '@/app/mocks/products';
 
 export async function GET() {

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Product } from '../mocks/products';
 import CartButton from '../components/CartButton';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getPaginatedProductsFromDb } from '../slowDb/productsDb';
+import { getPaginatedProductsFromDb } from '../lib/db/productsDb';
 
 const productsPerPage = 3;
 
