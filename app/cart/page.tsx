@@ -1,17 +1,89 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartItem } from '../mocks/cart';
-import { useCart } from '../contexts/CartContext';
 
 function CartItems() {
-  const { items, updateQuantity, removeFromCart } = useCart();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCartItems();
+  }, []);
+
+  const fetchCartItems = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('/api/cart');
+      if (!response.ok) throw new Error('Failed to fetch cart items');
+      const data = await response.json();
+      setItems(data);
+    } catch (err) {
+      setError('Failed to load cart items');
+      console.error('Error fetching cart:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateQuantity = async (productId: string, quantity: number) => {
+    try {
+      setError(null);
+      const response = await fetch(`/api/cart/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity }),
+      });
+      if (!response.ok) throw new Error('Failed to update quantity');
+      const data = await response.json();
+      setItems(data);
+    } catch (err) {
+      setError('Failed to update quantity');
+      console.error('Error updating quantity:', err);
+    }
+  };
+
+  const removeFromCart = async (productId: string) => {
+    try {
+      setError(null);
+      const response = await fetch(`/api/cart/${productId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to remove item');
+      const data = await response.json();
+      setItems(data);
+    } catch (err) {
+      setError('Failed to remove item');
+      console.error('Error removing item:', err);
+    }
+  };
+
   const totalPrice = items.reduce(
     (sum: number, item: CartItem) => sum + item.product.price * item.quantity,
     0
   );
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-600">
+        {error}
+        <button
+          onClick={fetchCartItems}
+          className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -2,36 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Product, mockProducts } from '../mocks/products';
-import { useCart } from '../contexts/CartContext';
+import { Product } from '../mocks/products';
 import CartButton from '../components/CartButton';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { getPaginatedProductsFromDb } from '../slowDb/productsDb';
 
 const productsPerPage = 3;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [cartItems, setCartItems] = useState<{ [key: string]: number }>({});
+  const [cartLoading, setCartLoading] = useState(true);
   const searchParams = useSearchParams();
   
   const currentPage = Number(searchParams.get('page')) || 1;
-  const totalPages = Math.ceil(mockProducts.length / productsPerPage);
-  const { items, addToCart, updateQuantity } = useCart();
 
   useEffect(() => {
-    // Simulated API call with delay
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // Simulated delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Simulate pagination
-        const startIndex = (currentPage - 1) * productsPerPage;
-        const endIndex = startIndex + productsPerPage;
-        const paginatedProducts = mockProducts.slice(startIndex, endIndex);
-        
-        setProducts(paginatedProducts);
+        const { products, totalPages } = await getPaginatedProductsFromDb(currentPage);
+        setProducts(products);
+        setTotalPages(totalPages);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -39,15 +33,71 @@ export default function ProductsPage() {
       }
     };
 
-    fetchProducts();
-  }, [currentPage, productsPerPage]);
+    const fetchCartItems = async () => {
+      try {
+        setCartLoading(true);
+        const response = await fetch('/api/cart');
+        if (!response.ok) throw new Error('Failed to fetch cart items');
+        const items = await response.json();
+        const cartMap = items.reduce((acc: { [key: string]: number }, item: { product: Product, quantity: number }) => {
+          acc[item.product.id] = item.quantity;
+          return acc;
+        }, {});
+        setCartItems(cartMap);
+      } catch (error) {
+        console.error('Error fetching cart items:', error);
+      } finally {
+        setCartLoading(false);
+      }
+    };
 
-  const getProductQuantity = (productId: string) => {
-    const cartItem = items.find(item => item.product.id === productId);
-    return cartItem?.quantity || 0;
+    fetchProducts();
+    fetchCartItems();
+  }, [currentPage]);
+
+  const updateCartItem = async (productId: string, quantity: number) => {
+    try {
+      const response = await fetch(`/api/cart/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity }),
+      });
+      if (!response.ok) throw new Error('Failed to update cart');
+      const items = await response.json();
+      const cartMap = items.reduce((acc: { [key: string]: number }, item: { product: Product, quantity: number }) => {
+        acc[item.product.id] = item.quantity;
+        return acc;
+      }, {});
+      setCartItems(cartMap);
+    } catch (error) {
+      console.error('Error updating cart:', error);
+    }
   };
 
-  if (loading) {
+  const addToCart = async (product: Product) => {
+    try {
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(product),
+      });
+      if (!response.ok) throw new Error('Failed to add to cart');
+      const items = await response.json();
+      const cartMap = items.reduce((acc: { [key: string]: number }, item: { product: Product, quantity: number }) => {
+        acc[item.product.id] = item.quantity;
+        return acc;
+      }, {});
+      setCartItems(cartMap);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
+  const getProductQuantity = (productId: string) => {
+    return cartItems[productId] || 0;
+  };
+
+  if (loading || cartLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -78,8 +128,8 @@ export default function ProductsPage() {
                 <CartButton
                   quantity={getProductQuantity(product.id)}
                   onAdd={() => addToCart(product)}
-                  onIncrease={() => updateQuantity(product.id, getProductQuantity(product.id) + 1)}
-                  onDecrease={() => updateQuantity(product.id, getProductQuantity(product.id) - 1)}
+                  onIncrease={() => updateCartItem(product.id, getProductQuantity(product.id) + 1)}
+                  onDecrease={() => updateCartItem(product.id, getProductQuantity(product.id) - 1)}
                 />
               </div>
             </div>

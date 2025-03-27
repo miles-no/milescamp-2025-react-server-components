@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useCart } from '../contexts/CartContext';
+import { useState, useEffect } from 'react';
+import { CartItem } from '../mocks/cart';
 import Image from 'next/image';
 
 interface CheckoutForm {
@@ -15,7 +15,9 @@ interface CheckoutForm {
 }
 
 export default function CheckoutPage() {
-  const { items } = useCart();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<CheckoutForm>({
     firstName: '',
     lastName: '',
@@ -25,6 +27,26 @@ export default function CheckoutPage() {
     postalCode: '',
     country: '',
   });
+
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch('/api/cart');
+        if (!response.ok) throw new Error('Failed to fetch cart items');
+        const data = await response.json();
+        setItems(data);
+      } catch (err) {
+        setError('Failed to load cart items');
+        console.error('Error fetching cart:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCartItems();
+  }, []);
 
   const subtotal = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const shipping = items.length > 0 ? 5.99 : 0;
@@ -43,6 +65,28 @@ export default function CheckoutPage() {
       [name]: value
     }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-red-600">
+        {error}
+        <button
+          onClick={() => window.location.reload()}
+          className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -162,7 +206,7 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Place Order
             </button>
