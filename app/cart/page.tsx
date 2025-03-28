@@ -154,7 +154,7 @@ function CartItems() {
   );
 }
 
-function LoadingSpinner() {
+function CarSkeleton() {
   return (
     <div className="space-y-6">
       {[1, 2].map((i) => (
@@ -187,10 +187,7 @@ export default function CartPage() {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Shopping Cart</h1>
-      
-      <Suspense fallback={<LoadingSpinner />}>
         <CartItems />
-      </Suspense>
     </div>
   );
 } 

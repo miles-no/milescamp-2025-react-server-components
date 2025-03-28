@@ -6,6 +6,7 @@ import { Product } from '../mocks/products';
 import CartButton from '../components/CartButton';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getPaginatedProductsFromDb } from '../lib/db/productsDb';
+import { PromotionBanner } from '../lib/db/promotionDb';
 
 const productsPerPage = 3;
 
@@ -15,6 +16,9 @@ export default function ProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [cartItems, setCartItems] = useState<{ [key: string]: number }>({});
   const [cartLoading, setCartLoading] = useState(true);
+  const [promotion, setPromotion] = useState<PromotionBanner | null>(null);
+  const [promotionLoading, setPromotionLoading] = useState(true);
+  const [promotionError, setPromotionError] = useState<string | null>(null);
   const searchParams = useSearchParams();
   
   const currentPage = Number(searchParams.get('page')) || 1;
@@ -51,8 +55,25 @@ export default function ProductsPage() {
       }
     };
 
+    const fetchPromotion = async () => {
+      try {
+        setPromotionLoading(true);
+        setPromotionError(null);
+        const response = await fetch('/api/promotion');
+        if (!response.ok) throw new Error('Failed to fetch promotion');
+        const data = await response.json();
+        setPromotion(data);
+      } catch (error) {
+        console.error('Error fetching promotion:', error);
+        setPromotionError('Failed to load promotion');
+      } finally {
+        setPromotionLoading(false);
+      }
+    };
+
     fetchProducts();
     fetchCartItems();
+    fetchPromotion();
   }, [currentPage]);
 
   const updateCartItem = async (productId: string, quantity: number) => {
@@ -107,6 +128,29 @@ export default function ProductsPage() {
 
   return (
     <div>
+      {promotionLoading ? (
+        <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-8"></div>
+      ) : promotionError ? (
+        <div className="h-32 bg-red-50 text-red-600 flex items-center justify-center rounded-lg mb-8">
+          {promotionError}
+        </div>
+      ) : promotion && (
+        <div className="relative h-32 mb-8 rounded-lg overflow-hidden">
+          <Image
+            src={promotion.bannerImage}
+            alt={promotion.promotionText}
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+            <div className="text-center text-white">
+              <h2 className="text-2xl font-bold mb-2">{promotion.promotionText}</h2>
+              <p className="text-lg">Save {promotion.discountPercentage}% until {new Date(promotion.validUntil).toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <h1 className="text-3xl font-bold mb-8 italic text-gray-700 border-l-4 border-gray-300 pl-4">&ldquo;Our Products, your desire&rdquo;</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
