@@ -18,4 +18,12 @@ export async function getPaginatedProductsFromDb(page: number = 1): Promise<{
     products: paginatedProducts,
     totalPages: Math.ceil(mockProducts.length / productsPerPage)
   };
+}
+
+export async function getProductById(id: string): Promise<Product | null> {
+  // Simulated delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const product = mockProducts.find(p => p.id === id);
+  return product || null;
 } 
