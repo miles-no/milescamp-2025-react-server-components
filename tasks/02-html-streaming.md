@@ -9,7 +9,7 @@ The current implementation:
 - Shows a simple spinner while all data is loading
 - Blocks the entire page when any API call is slow
 - Doesn't handle slow API calls independently
-
+  
 ## Requirements
 1. Create loading.tsx files at the page level
 2. Implement streaming for the products list

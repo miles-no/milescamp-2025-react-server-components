@@ -58,6 +58,7 @@ const CartButton: FC<CartButtonProps> = ({
       const y = rect.top + (rect.height / 2);
       setConfetti({ x, y });
       onAdd();
+      window.dispatchEvent(new Event('cart-update'));
       setTimeout(() => setConfetti(null), 1000);
     }
   }, [onAdd]);
@@ -77,17 +78,27 @@ const CartButton: FC<CartButtonProps> = ({
     );
   }
 
+  const handleIncrease = () => {
+    onIncrease();
+    window.dispatchEvent(new Event('cart-update'));
+  };
+
+  const handleDecrease = () => {
+    onDecrease();
+    window.dispatchEvent(new Event('cart-update'));
+  };
+
   return (
     <div className="flex items-center gap-2">
       <button
-        onClick={onDecrease}
+        onClick={handleDecrease}
         className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold w-8 h-8 rounded flex items-center justify-center transition-colors"
       >
         -
       </button>
       <span className="w-8 text-center font-semibold">{quantity}</span>
       <button
-        onClick={onIncrease}
+        onClick={handleIncrease}
         className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold w-8 h-8 rounded flex items-center justify-center transition-colors"
       >
         +

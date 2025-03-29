@@ -7,6 +7,8 @@ import CartButton from '../components/CartButton';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getPaginatedProductsFromDb } from '../lib/db/productsDb';
 import { PromotionBanner } from '../lib/db/promotionDb';
+import { LoadingSpinner } from '../components/LoadingSpinner';
+import CartTotalBar from '../components/CartTotalBar';
 
 const productsPerPage = 3;
 
@@ -120,38 +122,25 @@ export default function ProductsPage() {
 
   if (loading || cartLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <LoadingSpinner />
     );
   }
 
   return (
-    <div>
-      {promotionLoading ? (
-        <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-8"></div>
-      ) : promotionError ? (
-        <div className="h-32 bg-red-50 text-red-600 flex items-center justify-center rounded-lg mb-8">
-          {promotionError}
-        </div>
-      ) : promotion && (
-        <div className="relative h-32 mb-8 rounded-lg overflow-hidden">
-          <Image
-            src={promotion.bannerImage}
-            alt={promotion.promotionText}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-            <div className="text-center text-white">
-              <h2 className="text-2xl font-bold mb-2">{promotion.promotionText}</h2>
-              <p className="text-lg">Save {promotion.discountPercentage}% until {new Date(promotion.validUntil).toLocaleDateString()}</p>
-            </div>
-          </div>
+    <div className="space-y-8 pb-24">
+      <h1 className="text-3xl font-bold">Products</h1>
+      {promotion && !promotionError && (
+        <div className="bg-blue-100 border border-blue-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-blue-800">{promotion.promotionText}</h2>
+          <p className="text-blue-600">Save {promotion.discountPercentage}% until {new Date(promotion.validUntil).toLocaleDateString()}</p>
         </div>
       )}
-      
-      <h1 className="text-3xl font-bold mb-8 italic text-gray-700 border-l-4 border-gray-300 pl-4">&ldquo;Our Products, your desire&rdquo;</h1>
+      {promotionError && (
+        <div className="bg-red-100 border border-red-200 rounded-lg p-4">
+          <p className="text-red-600">{promotionError}</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
           <div key={product.id} className="border rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
@@ -181,6 +170,7 @@ export default function ProductsPage() {
         ))}
       </div>
       <Pagination currentPage={currentPage} totalPages={totalPages} />
+      <CartTotalBar />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CartItem } from '../mocks/cart';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 function CartItems() {
   const [items, setItems] = useState<CartItem[]>([]);
